@@ -37,6 +37,12 @@ Official packages are published only from this repository's Releases and huichen
 二次创作或分发时，请把上表中的文件换成你自己的 Logo 和图标，不要以官方版名义发布。
 官方安装包只从本仓库 Releases 和 huichen.dev 发布。
 
+## Toki 衍生版本说明
+
+Toki 已把上表中的网页 Logo 与 PWA 图标（`logo.svg`、`icon.png`、`icon-512.png`）替换为 Toki 自制的 T 字母几何标志，
+不以官方账号星图 / Atlas 名义发布。安卓与 iOS 原生图标仍在 `android/`、`ios/`、`native/` 中保留上游素材作为源码兼容用途；
+若打包发布原生 App，请另行替换为 Toki 自己的图标。`docs/wechat-reward.jpg` 为上游作者个人赞赏码，非 Toki 所有。
+
 ## Third-party icons / 第三方图标
 
 The website and app icons under `icons/` (e.g. `icons/github.com.png`) used by

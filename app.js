@@ -111,11 +111,12 @@
   // every item carries updatedAt; removed ids become tombstones, so two devices can merge
   const strip = o => { const { updatedAt, ...r } = o; return JSON.stringify(r); };
   let seen = new Map();
-  const remember = () => { seen = new Map(); if (state) for (const k of ['identities', 'accounts']) for (const x of state[k]) seen.set(x.id, strip(x)); };
+  const DATA_ARRAYS = ['identities', 'accounts', 'tokens'];
+  const remember = () => { seen = new Map(); if (state) for (const k of DATA_ARRAYS) for (const x of (state[k] || [])) seen.set(x.id, strip(x)); };
   const save = () => {
     const now = Date.now(); state.deleted = state.deleted || {};
     const live = new Set();
-    for (const k of ['identities', 'accounts']) for (const x of state[k]) {
+    for (const k of DATA_ARRAYS) for (const x of (state[k] || [])) {
       live.add(x.id);
       if (seen.get(x.id) !== strip(x) || !x.updatedAt) x.updatedAt = now;
       delete state.deleted[x.id];
@@ -142,6 +143,7 @@
     return {
       demo: true,
       identities: ids,
+      tokens: [],
       accounts: [
         mk('GitHub', 'github.com', '开发', [o, p1], 0, '已开两步验证'), mk('Claude', 'claude.ai', 'AI', [g], 0),
         mk('Cloudflare', 'cloudflare.com', '开发', [o], 1), mk('ChatGPT', 'chatgpt.com', 'AI', [g], 1),
@@ -495,6 +497,7 @@
   function render() {
     dataVer++;
     renderSummary(); renderWallet(); renderGrid(); renderTimeline(); renderSites();
+    window.TokiTokens?.render();
     $('#menu [data-act="privacy"] span').textContent = ui.privacy ? '显示完整号码' : '隐藏号码';
     if (ui.tab === 'graph') Graph.rebuild(); else Graph.prebuild();
   }
@@ -539,7 +542,7 @@
   }
 
   // ---------- tabs ----------
-  const TABS = ['home', 'sites', 'graph'];
+  const TABS = ['home', 'sites', 'tokens', 'graph'];
   function setTab(tab) {
     if (tab === ui.tab) { scrollTo({ top: 0, behavior: 'smooth' }); return; }
     const from = TABS.indexOf(ui.tab); ui.tab = tab;
@@ -548,11 +551,12 @@
     th.style.transform = `translateX(${idx * 100}%)`;
     if (!calm()) th.animate([{ scale: '1 1' }, { scale: `${1 + .16 * Math.abs(idx - from)} 1.14`, offset: .35 }, { scale: '.97 .96', offset: .7 }, { scale: '1 1' }], { duration: 620, easing: 'cubic-bezier(.32,.72,0,1)' });
     $$('.view').forEach(v => { const on = v.dataset.view === tab; v.classList.toggle('active', on); v.classList.toggle('from-r', on && idx > from); v.classList.toggle('from-l', on && idx < from); });
-    $('#topTitle').textContent = { home: '账号', sites: '网站与 App', graph: '关系图' }[tab];
+    $('#topTitle').textContent = { home: '账号', sites: '网站与 App', tokens: 'Tokens', graph: '关系图' }[tab];
     scrollTo(0, 0);
     // first paint of the tab change goes out before the map is (re)built, so the two never share a frame
     if (tab === 'graph') requestAnimationFrame(() => { if (ui.tab === 'graph') Graph.start(); }); else Graph.stop();
     if (tab === 'home') { if (geo) geo.ok = false; if (!rafCF) rafCF = requestAnimationFrame(coverflow); if (gridStale) { gridStale = false; renderGrid(); } }
+    if (tab === 'tokens') window.TokiTokens?.render();
   }
 
   // ---------- sheet ----------
@@ -1225,9 +1229,10 @@
 
   // ---------- import / export ----------
   function exportData() {
-    if (native) { native.postMessage({ file: `账号备份-${new Date().toISOString().slice(0, 10)}.json`, text: JSON.stringify({ app: 'atlas', version: 1, exportedAt: new Date().toISOString(), identities: state.identities, accounts: state.accounts }, null, 2) }); return; }
-    const blob = new Blob([JSON.stringify({ app: 'atlas', version: 1, exportedAt: new Date().toISOString(), identities: state.identities, accounts: state.accounts }, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `账号备份-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+    const payload = JSON.stringify({ app: 'toki', version: 2, exportedAt: new Date().toISOString(), identities: state.identities, accounts: state.accounts, tokens: state.tokens || [] }, null, 2);
+    if (native) { native.postMessage({ file: `Toki备份-${new Date().toISOString().slice(0, 10)}.json`, text: payload }); return; }
+    const blob = new Blob([payload], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Toki备份-${new Date().toISOString().slice(0, 10)}.json`; a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1500); toast('备份已导出');
   }
   function importData(file) {
@@ -1236,9 +1241,10 @@
       try {
         const d = JSON.parse(r.result);
         if (!Array.isArray(d.identities) || !Array.isArray(d.accounts)) throw 0;
-        snap(); state = { identities: d.identities, accounts: d.accounts }; save(); render();
-        undoToast(`已导入 ${d.identities.length} 个身份和 ${d.accounts.length} 个网站`);
-      } catch { toast('这不是 Atlas 的备份文件'); }
+        const tokens = Array.isArray(d.tokens) ? d.tokens.map(t => window.TokiTokens.normalize(t)) : [];
+        snap(); state = { identities: d.identities, accounts: d.accounts, tokens }; save(); render();
+        undoToast(`已导入 ${d.identities.length} 个身份、${d.accounts.length} 个网站和 ${tokens.length} 条密钥`);
+      } catch { toast('这不是 Toki 的备份文件'); }
     };
     r.readAsText(file);
   }
@@ -1251,7 +1257,7 @@
     const d = t.dataset;
     if (t.classList.contains('round')) tapFx(t);
     if (t.id === 'menuBtn') return menu.classList.toggle('open');
-    if (t.id === 'addBtn') return setTimeout(() => !state.identities.length ? identityForm() : pickApps(ui.tab === 'home' ? cur()?.id : null), calm() ? 0 : 110);
+    if (t.id === 'addBtn') return setTimeout(() => ui.tab === 'tokens' ? window.TokiTokens?.add() : (!state.identities.length ? identityForm() : pickApps(ui.tab === 'home' ? cur()?.id : null)), calm() ? 0 : 110);
     if (d.kind) return switchKind(d.kind);
     if (t.id === 'gridAdd') return pickApps(cur()?.id);
     if (t.id === 'openSearch') return setTimeout(openSpot, calm() ? 0 : 110);
@@ -1266,7 +1272,7 @@
       if (d.act === 'import') $('#fileInput').click();
       if (d.act === 'download') window.open('https://github.com/Ckxkx/account-atlas/releases/latest', '_blank', 'noopener');
       if (d.act === 'demo') { snap(); state = demo(); save(); setKind('email'); render(); undoToast('已载入示例'); }
-      if (d.act === 'wipe') confirmSheet('清空全部数据？', Sync.on ? '所有邮箱、手机号和网站记录都会删除，开了同步的其他设备也会一起清空。建议先导出备份。' : '所有邮箱、手机号和网站记录都会从这台设备上删除。建议先导出备份。', '清空全部数据', () => { snap(); state = { identities: [], accounts: [] }; save(); render(); undoToast('已清空'); });
+      if (d.act === 'wipe') confirmSheet('清空全部数据？', Sync.on ? '所有邮箱、手机号、网站记录和密钥都会删除，开了同步的其他设备也会一起清空。建议先导出备份。' : '所有邮箱、手机号、网站记录和密钥都会从这台设备上删除。建议先导出备份。', '清空全部数据', () => { snap(); state = { identities: [], accounts: [], tokens: [] }; save(); render(); undoToast('已清空'); });
       return;
     }
     if (t.closest('#tabbar')) return setTab(d.tab);
@@ -1480,13 +1486,13 @@
     function merge(a, b) {
       const del = { ...(a.deleted || {}) };
       for (const [id, t] of Object.entries(b.deleted || {})) del[id] = Math.max(del[id] || 0, t);
-      const out = { identities: [], accounts: [], deleted: del };
-      for (const k of ['identities', 'accounts']) {
+      const out = { identities: [], accounts: [], tokens: [], deleted: del };
+      for (const k of DATA_ARRAYS) {
         const map = new Map();
         for (const x of [...a[k], ...b[k]]) { const cur = map.get(x.id); if (!cur || (x.updatedAt || 0) > (cur.updatedAt || 0)) map.set(x.id, x); }
         out[k] = [...map.values()].filter(x => !(del[x.id] >= (x.updatedAt || 0)));
       }
-      for (const id of Object.keys(del)) if (out.identities.some(x => x.id === id) || out.accounts.some(x => x.id === id)) delete del[id];
+      for (const id of Object.keys(del)) if (DATA_ARRAYS.some(k => out[k].some(x => x.id === id))) delete del[id];
       out.identities.sort((x, y) => (x.order ?? 1e9) - (y.order ?? 1e9));
       // drop links to identities that no longer exist
       const ids = new Set(out.identities.map(i => i.id));
@@ -1495,7 +1501,7 @@
       const old = Date.now() - 90 * DAY; for (const [id, t] of Object.entries(del)) if (t < old) delete del[id];
       return out;
     }
-    const same = (a, b) => JSON.stringify([a.identities, a.accounts]) === JSON.stringify([b.identities, b.accounts]);
+    const same = (a, b) => JSON.stringify(DATA_ARRAYS.map(k => a[k] || [])) === JSON.stringify(DATA_ARRAYS.map(k => b[k] || []));
 
     async function run() {
       if (!conf || !key) return;
@@ -1503,12 +1509,12 @@
       busy = true; status.state = 'syncing'; emit();
       try {
         const text = await readGist(conf.gistId);
-        const remote = text ? await open(text) : { identities: [], accounts: [], deleted: {} };
+        const remote = text ? await open(text) : { identities: [], accounts: [], tokens: [], deleted: {} };
         const merged = merge(state, remote);
         if (!same(merged, state) || JSON.stringify(merged.deleted) !== JSON.stringify(state.deleted || {})) {
-          const before = JSON.stringify([state.identities, state.accounts]);
+          const before = JSON.stringify(DATA_ARRAYS.map(k => state[k] || []));
           state = merged; remember(); localStorage.setItem(KEY, JSON.stringify(state));
-          if (before !== JSON.stringify([state.identities, state.accounts])) { ui.active = Math.min(ui.active, deck().length); render(); refreshSheet(); }
+          if (before !== JSON.stringify(DATA_ARRAYS.map(k => state[k] || []))) { ui.active = Math.min(ui.active, Math.max(0, deck().length - 1)); render(); refreshSheet(); }
         }
         if (!text || !same(merged, remote) || JSON.stringify(merged.deleted) !== JSON.stringify(remote.deleted || {}))
           await gh('/gists/' + conf.gistId, { method: 'PATCH', body: JSON.stringify({ description: DESC, files: { [FILE]: { content: await seal(merged) } } }) });
@@ -1548,9 +1554,9 @@
           key = await derive(pass, unb64(salt));
         }
         conf = { provider: prov, token, salt, key: b64(await crypto.subtle.exportKey('raw', key)), gistId: g ? g.id : null, at: 0 };
-        if (remote && state.demo) { state = { identities: [], accounts: [], deleted: {} }; remember(); }
+        if (remote && state.demo) { state = { identities: [], accounts: [], tokens: [], deleted: {} }; remember(); }
         if (!g) {
-          const local = state.demo ? { identities: [], accounts: [], deleted: {} } : state;
+          const local = state.demo ? { identities: [], accounts: [], tokens: [], deleted: {} } : state;
           if (state.demo) { state = local; remember(); }
           const made = await gh('/gists', { method: 'POST', body: JSON.stringify({ description: DESC, public: false, files: { [FILE]: { content: await seal(local) } } }) }, token, prov);
           conf.gistId = made.id;
@@ -1637,12 +1643,14 @@
 
   // ---------- boot ----------
   if (state) remember();
+  if (state && !Array.isArray(state.tokens)) state.tokens = [];
   if (!state) {
     state = demo(); save();
-    setTimeout(() => toast('这是示例数据', { label: '清空', fn: () => { state = { identities: [], accounts: [] }; save(); render(); } }), 1400);
+    setTimeout(() => toast('这是示例数据', { label: '清空', fn: () => { state = { identities: [], accounts: [], tokens: [] }; save(); render(); } }), 1400);
   }
   if (!state.identities.some(i => i.type === ui.kind)) { const t = state.identities.find(i => KINDS.includes(i.type)); if (t) ui.kind = t.type; }
 
+  window.TokiTokens?.install({ getState: () => state, save, render, toast, openSheet, closeSheet, confirmSheet, refreshSheet });
   paintTheme(); render(); Sync.init(); Sync.listeners.forEach(f => f());
   const first = cur();
   $('#glow').style.setProperty('--accent', first ? first.color : '#3a3a3c'); glowColor = first ? first.color : '#3a3a3c';

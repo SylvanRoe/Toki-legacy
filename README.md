@@ -1,12 +1,7 @@
-<p align="center"><img src="icon-512.png" width="112" alt="账号星图"></p>
-<h1 align="center">账号星图 · Atlas</h1>
-<p align="center">这个邮箱注册过什么？那个手机号绑了哪些 App？一眼看清。</p>
-<p align="center">网页 · iOS · 安卓 三端可用，iOS 用 SwiftUI、安卓用 Jetpack Compose 原生编写，数据加密同步互通</p>
-<p align="center">
-  <a href="https://huichen.dev/account-atlas/">在线使用</a> ·
-  <a href="https://github.com/Ckxkx/account-atlas/releases/latest">下载 App（安卓 APK · iOS IPA）</a> ·
-  备用下载：<a href="https://huichen.dev/downloads/Atlas.apk">APK</a> · <a href="https://huichen.dev/downloads/Atlas.ipa">IPA</a>
-</p>
+<p align="center"><img src="icon-512.png" width="112" alt="Toki"></p>
+<h1 align="center">Toki · 账号与密钥</h1>
+<p align="center">这个邮箱注册过什么？那个手机号绑了哪些 App？API Key 和 Access Token 放在哪？一眼看清。</p>
+<p align="center">基于 <a href="https://github.com/Ckxkx/account-atlas">账号星图 Atlas</a> 二次开发，新增网页版 Tokens 密钥管理模块</p>
 
 <p align="center">
   <img src="docs/wallet.gif" width="30%">
@@ -14,8 +9,16 @@
   <img src="docs/theme.gif" width="30%">
 </p>
 
-> **开源**：完整源码和提交历史都在本仓库，欢迎[提 Issue](https://github.com/Ckxkx/account-atlas/issues)和 Pull Request。项目自己的 Logo 和图标不在开放范围内，具体见[许可](#许可)。
-> 官方安装包只从本仓库 [Releases](https://github.com/Ckxkx/account-atlas/releases/latest) 和 [huichen.dev](https://huichen.dev/) 发布。App 永久免费，任何收费渠道都不是官方的。
+> **关于 Toki**：本项目是 [Ckxkx/account-atlas](https://github.com/Ckxkx/account-atlas) 的 fork，新增 Tokens 模块，Logo 与图标为 Toki 原创，不沿用上游品牌素材。上游更新可通过 `upstream` remote 同步。
+> 原 Atlas 官方安装包只从 [上游 Releases](https://github.com/Ckxkx/account-atlas/releases/latest) 发布，与 Toki 无关。
+
+## Tokens 模块（网页版）
+- **分类管理**：AI API / GitHub / 云服务 / 数据库 / 支付 / OAuth / 其他，支持筛选
+- **平台预设**：OpenAI、Claude、GitHub、Cloudflare、Supabase、Stripe 等常见平台一键填入
+- **打码与复制**：密钥默认 `••••` 打码，点击显示，一键复制不写入日志
+- **到期提醒**：记录到期日，临期/已过期高亮显示
+- **加密同步**：与原有账号数据一起走 AES-GCM 端到端加密同步（Gitee / GitHub 私有 Gist）
+- **导入导出**：JSON 备份包含 `tokens` 字段，兼容原 Atlas 数据格式（旧备份无 tokens 时自动补空）
 
 ## 它能做什么
 - **卡包**：每个邮箱、手机号都是一张 Wallet 风格的卡，左右翻看，手机号做成 SIM 卡

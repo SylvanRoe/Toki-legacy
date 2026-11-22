@@ -7,14 +7,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="账号星图" />
-  <meta name="description" content="每个邮箱和手机号注册了哪些网站与 App，一眼看清" />
-  <title>账号 · Atlas</title>
+  <meta name="apple-mobile-web-app-title" content="Toki" />
+  <meta name="description" content="账号关系与 API Token 管理，一眼看清" />
+  <title>Toki · 账号与密钥</title>
   <script>try{if(localStorage.getItem("atlas.theme")==="light"){document.documentElement.dataset.theme="light";document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').content="default";document.querySelector('meta[name="theme-color"]').content="#f2f2f7"}}catch(e){}</script>
-  <link rel="icon" href="logo.svg?v=4" type="image/svg+xml" />
+  <link rel="icon" href="logo.svg?v=toki1" type="image/svg+xml" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icon.png?v=4" />
-  <link rel="stylesheet" href="styles.css?v=1795700000" />
+  <link rel="apple-touch-icon" href="icon.png?v=toki1" />
+  <link rel="stylesheet" href="styles.css?v=toki1" />
 </head>
 <body>
   <div class="glow" id="glow"></div>
@@ -72,6 +72,13 @@
       <div id="siteList"></div>
     </section>
 
+    <!-- Tokens -->
+    <section class="view" data-view="tokens">
+      <div class="hello"><h1 class="large">Tokens</h1><p class="summary" id="tokensSummary"></p></div>
+      <div class="filters" id="tokenFilters"></div>
+      <div id="tokenList"></div>
+    </section>
+
     <!-- 星图 -->
     <section class="view" data-view="graph">
       <div class="hello"><h1 class="large">关系图</h1><p class="summary" id="graphSummary"></p></div>
@@ -86,6 +93,7 @@
     <span class="tab-thumb" id="tabThumb"></span>
     <button class="active" data-tab="home" aria-label="卡包"><svg class="o" viewBox="0 0 24 24"><path d="M7 4.2h10M5 6.9h14"/><rect x="3" y="9.6" width="18" height="10.6" rx="2.8"/><path d="M3 13.4h18"/></svg><svg class="f" viewBox="0 0 24 24"><path d="M7 4.2h10M5 6.9h14" opacity=".55"/><path class="fl" fill-rule="evenodd" d="M5.8 9.6h12.4a2.8 2.8 0 0 1 2.8 2.8v5a2.8 2.8 0 0 1-2.8 2.8H5.8A2.8 2.8 0 0 1 3 17.4v-5a2.8 2.8 0 0 1 2.8-2.8ZM3 12.6v1.6h18v-1.6Z"/></svg></button>
     <button data-tab="sites" aria-label="全部 App"><svg class="o" viewBox="0 0 24 24"><rect x="3.6" y="3.6" width="7.2" height="7.2" rx="2.2"/><rect x="13.2" y="3.6" width="7.2" height="7.2" rx="2.2"/><rect x="3.6" y="13.2" width="7.2" height="7.2" rx="2.2"/><rect x="13.2" y="13.2" width="7.2" height="7.2" rx="2.2"/></svg><svg class="f" viewBox="0 0 24 24"><rect class="fl" x="3.2" y="3.2" width="8" height="8" rx="2.4"/><rect class="fl" x="12.8" y="3.2" width="8" height="8" rx="2.4"/><rect class="fl" x="3.2" y="12.8" width="8" height="8" rx="2.4"/><rect class="fl" x="12.8" y="12.8" width="8" height="8" rx="2.4"/></svg></button>
+    <button data-tab="tokens" aria-label="Tokens"><svg class="o" viewBox="0 0 24 24"><path d="M14.5 5.5 18.5 9.5M15.5 3.5l5 5-2.5 2.5-5-5zM12.5 8.5 4 17l-1 4 4-1 8.5-8.5"/><circle cx="16" cy="10" r="1"/></svg><svg class="f" viewBox="0 0 24 24"><path class="fl" d="M12.4 8.1 4 16.5 3 21l4.5-1 8.4-8.4-3.5-3.5ZM16.6 3.3l4.1 4.1-2.2 2.2-4.1-4.1 2.2-2.2Z"/></svg></button>
     <button data-tab="graph" aria-label="关系图"><svg class="o" viewBox="0 0 24 24"><path class="dot" d="M10.4 7.6 6.2 15.4M13.6 7.6l4.2 7.8M7.6 18.6h8.8"/><circle cx="12" cy="5" r="2.6"/><circle cx="4.8" cy="18.6" r="2.6"/><circle cx="19.2" cy="18.6" r="2.6"/></svg><svg class="f" viewBox="0 0 24 24"><path class="dot" d="M10.4 7.6 6.2 15.4M13.6 7.6l4.2 7.8M7.6 18.6h8.8"/><circle class="fl" cx="12" cy="5" r="3.2"/><circle class="fl" cx="4.8" cy="18.6" r="3.2"/><circle class="fl" cx="19.2" cy="18.6" r="3.2"/></svg></button>
   </nav>
 
@@ -105,7 +113,8 @@
 
   <div class="toast" id="toast"></div>
   <input type="file" id="fileInput" accept="application/json" hidden />
-  <script src="app.js?v=1795700000"></script>
+  <script src="tokens.js?v=toki1"></script>
+  <script src="app.js?v=toki1"></script>
 <script>if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js"));</script>
 </body>
 </html>
